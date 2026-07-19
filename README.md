@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/hhagenbuch/mcp-pact/actions/workflows/ci.yml/badge.svg)](https://github.com/hhagenbuch/mcp-pact/actions/workflows/ci.yml)
 [![Action self-test](https://github.com/hhagenbuch/mcp-pact/actions/workflows/self-test.yml/badge.svg)](https://github.com/hhagenbuch/mcp-pact/actions/workflows/self-test.yml)
-![Java 21](https://img.shields.io/badge/Java-21-blue)
+![Java 25](https://img.shields.io/badge/Java-25-blue)
 
 > When an MCP server renames a tool, tightens a parameter, or subtly changes
 > response shape, nothing fails at deploy time — the agents depending on it
