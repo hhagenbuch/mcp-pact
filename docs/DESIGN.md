@@ -72,8 +72,51 @@ The **WARN** tier is the MCP-specific contribution: a description change is
 schema-true but behavior-changing, because the description is part of the prompt
 the model reasons over. Highlighted in the README.
 
-Verifier exit codes: nonzero on any BREAKING; `--strict` also fails on WARN;
-COMPAT is informational.
+### The load-bearing invariant: understood, or flagged — never silent
+
+The diff models a *shallow* slice of JSON Schema precisely: top-level property
+presence, required-ness, and plain string `type`s. That is a deliberate scope
+cut — but a shallow diff must never *silently bless* a change it did not
+understand. So anything deeper or unrecognized degrades to **WARN
+`param.schemaDetails`** rather than passing:
+
+- a `type` given as an array (`["string","null"]`) — not a plain string, so the
+  precise type comparison can't apply;
+- enum narrowing, `pattern`/`minLength` tightening, nested-object changes — any
+  case where the shallow types agree but the property's schema subtree differs
+  from the recorded one.
+
+The rule: for a used param present on both sides, if both declare a plain string
+`type` and they differ → **BREAKING `param.type`**; otherwise, if the recorded
+and current property subtrees are not equal → **WARN `param.schemaDetails`**.
+"We either understood the change or we flagged it" is the whole thesis in one
+sentence.
+
+### Description materiality
+
+Whitespace-, case-, and punctuation-only description edits are ignored. A
+genuine reword is compared by **token-overlap (Jaccard)**; below ~0.8 similarity
+it is a material **WARN `tool.description`**, above it it's treated as a minor
+edit and skipped, so `--strict` gates don't fail on trivial rewrites. A *removed*
+description is always **WARN `tool.descriptionRemoved`** (a missing description
+changes model behavior more than a reworded one). Known limitation: a
+single-token typo fix lowers overlap and may still flag — an acceptable
+false-positive given how rare that is.
+
+### Capabilities are dotted paths
+
+`requiredCapabilities` entries are matched against the provider's negotiated
+capabilities flattened to dotted paths, so a pact can require either a top-level
+capability (`"tools"`) or a nested one (`"resources.subscribe"`) with no format
+change — future-proofed now to avoid a later `pactVersion` bump.
+
+### Exit codes
+
+`0` = the contract holds. `1` = a BREAKING difference (or a WARN under
+`--strict`). `2` = the check could not be run: a usage error, an **invalid pact**
+(bad path/regex/type), or the provider failed to launch or respond. The 1-vs-2
+split is deliberate — "the contract is broken" must be distinguishable from "we
+couldn't check it". COMPAT is always informational.
 
 ## 4. Components (one Maven multi-module repo, Java 21)
 

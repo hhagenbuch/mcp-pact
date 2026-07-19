@@ -1,0 +1,23 @@
+{
+  "pactVersion": "0.1",
+  "consumer": "support-agent",
+  "provider": "example-tools",
+  "expectations": [
+    {
+      "tool": "search_code",
+      "description": "Search the codebase.",
+      "inputSchema": { "type": "object", "properties": { "query": { "type": "string" } }, "required": ["query"] },
+      "interactions": [
+        {
+          "description": "malformed matcher regex",
+          "input": { "query": "CartService" },
+          "response": {
+            "matchers": [
+              { "path": "$.content[0].text", "regex": "CartService(" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

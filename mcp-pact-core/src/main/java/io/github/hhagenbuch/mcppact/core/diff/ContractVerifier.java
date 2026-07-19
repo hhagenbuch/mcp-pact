@@ -7,18 +7,29 @@ import io.github.hhagenbuch.mcppact.core.model.ServerSnapshot;
 import io.github.hhagenbuch.mcppact.core.model.ServerTool;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Compares a {@link Pact} against a {@link ServerSnapshot} and classifies every
- * difference as BREAKING / COMPAT / WARN. This is the "brain" of the verifier;
- * it does no I/O — interaction replay (which needs live responses) is layered on
- * top in {@code mcp-pact-verifier} using the {@code matcher} engine.
+ * difference as BREAKING / COMPAT / WARN. Does no I/O; interaction replay is
+ * layered on top in {@code mcp-pact-verifier} using the {@code matcher} engine.
+ *
+ * <p>Guiding invariant: <em>we either understood a change or we flagged it.</em>
+ * The diff models a shallow slice of JSON Schema precisely (top-level property
+ * presence, required-ness, and plain string types); anything deeper or
+ * unrecognized degrades to a WARN rather than passing silently.
  */
 public final class ContractVerifier {
+
+    /**
+     * Description rewrites with token-overlap at or above this Jaccard similarity
+     * are treated as immaterial (reordering, punctuation, minor edits) and not
+     * flagged. Below it, the reword is reported as WARN. See DESIGN.md §3.
+     */
+    private static final double DESCRIPTION_MATERIALITY = 0.8;
 
     private ContractVerifier() {
     }
@@ -43,12 +54,15 @@ public final class ContractVerifier {
             checkInputSchema(findings, tool, expectation, server);
         }
 
-        // Tools the server offers that no expectation covers are backwards-compatible additions.
-        for (String name : snapshot.tools().keySet()) {
-            if (!usedTools.contains(name)) {
-                findings.add(Finding.compat(name, "tool.new",
-                        "server advertises a new tool not covered by the pact"));
-            }
+        // Tools the server offers that no expectation covers are backwards-compatible
+        // additions — collapsed into one finding so a large server can't drown the report.
+        List<String> uncovered = snapshot.tools().keySet().stream()
+                .filter(name -> !usedTools.contains(name))
+                .toList();
+        if (!uncovered.isEmpty()) {
+            String detail = "server advertises " + uncovered.size() + " tool(s) not covered by the pact"
+                    + (uncovered.size() <= 10 ? ": " + String.join(", ", uncovered) : "");
+            findings.add(Finding.compat("*", "tool.new", detail));
         }
         return findings;
     }
@@ -57,9 +71,18 @@ public final class ContractVerifier {
                                          Expectation expectation, ServerTool server) {
         String recorded = expectation.description();
         String current = server.description();
-        if (recorded != null && current != null && !normalize(recorded).equals(normalize(current))) {
+        if (recorded == null) {
+            return; // nothing was recorded to compare against
+        }
+        if (current == null) {
+            findings.add(Finding.warn(tool, "tool.descriptionRemoved",
+                    "tool description was removed since the pact was recorded — "
+                            + "a missing description changes model behavior"));
+            return;
+        }
+        if (isMaterialRewrite(recorded, current)) {
             findings.add(Finding.warn(tool, "tool.description",
-                    "tool description changed since the pact was recorded — "
+                    "tool description changed materially since the pact was recorded — "
                             + "schema-true but behavior-changing"));
         }
     }
@@ -79,23 +102,26 @@ public final class ContractVerifier {
         SchemaShape consumer = SchemaShape.of(expectation.inputSchema());
         SchemaShape provider = SchemaShape.of(server.inputSchema());
 
-        // Params the consumer actually sends: removal or retyping is breaking.
-        for (Map.Entry<String, String> used : consumer.propertyTypes().entrySet()) {
-            String param = used.getKey();
-            String consumerType = used.getValue();
+        for (String param : consumer.properties().keySet()) {
             if (!provider.has(param)) {
                 findings.add(Finding.breaking(tool, "param.removed",
                         "input param '" + param + "' the consumer sends is no longer accepted"));
                 continue;
             }
-            String providerType = provider.type(param);
+            String consumerType = consumer.textualType(param);
+            String providerType = provider.textualType(param);
             if (consumerType != null && providerType != null && !consumerType.equals(providerType)) {
                 findings.add(Finding.breaking(tool, "param.type",
                         "input param '" + param + "' type changed from " + consumerType + " to " + providerType));
+            } else if (!consumer.schema(param).equals(provider.schema(param))) {
+                // Shallow types agree (or aren't plain strings) but the schema subtree
+                // changed in a way we don't model precisely — flag rather than silence.
+                findings.add(Finding.warn(tool, "param.schemaDetails",
+                        "input param '" + param + "' schema changed in a way mcp-pact does not model precisely "
+                                + "(nullable type, enum, pattern, length, or nested change) — review manually"));
             }
         }
 
-        // A newly-required param the consumer does not send breaks its calls.
         for (String required : provider.required()) {
             if (!consumer.has(required)) {
                 findings.add(Finding.breaking(tool, "param.newRequired",
@@ -103,8 +129,7 @@ public final class ContractVerifier {
             }
         }
 
-        // A new optional param is backwards compatible.
-        for (String param : provider.propertyTypes().keySet()) {
+        for (String param : provider.properties().keySet()) {
             if (!consumer.has(param) && !provider.required().contains(param)) {
                 findings.add(Finding.compat(tool, "param.newOptional",
                         "server added optional input param '" + param + "'"));
@@ -112,7 +137,41 @@ public final class ContractVerifier {
         }
     }
 
+    /**
+     * True when two descriptions differ enough to matter. Whitespace-, case-, and
+     * punctuation-only edits never count; rewrites are compared by token-overlap
+     * (Jaccard) so a reorder or minor tweak is immaterial while a genuine reword is
+     * flagged. Limitation: a single-token typo fix lowers overlap and may still
+     * flag — acceptable, and documented in DESIGN.md.
+     */
+    private static boolean isMaterialRewrite(String recorded, String current) {
+        if (normalize(recorded).equals(normalize(current))) {
+            return false;
+        }
+        Set<String> a = tokens(recorded);
+        Set<String> b = tokens(current);
+        if (a.isEmpty() && b.isEmpty()) {
+            return false;
+        }
+        Set<String> intersection = new HashSet<>(a);
+        intersection.retainAll(b);
+        Set<String> union = new HashSet<>(a);
+        union.addAll(b);
+        double jaccard = union.isEmpty() ? 1.0 : (double) intersection.size() / union.size();
+        return jaccard < DESCRIPTION_MATERIALITY;
+    }
+
     private static String normalize(String s) {
-        return s.trim().replaceAll("\\s+", " ");
+        return s.trim().replaceAll("\\s+", " ").toLowerCase();
+    }
+
+    private static Set<String> tokens(String s) {
+        Set<String> tokens = new HashSet<>();
+        for (String token : s.toLowerCase().split("[^\\p{Alnum}]+")) {
+            if (!token.isEmpty()) {
+                tokens.add(token);
+            }
+        }
+        return tokens;
     }
 }

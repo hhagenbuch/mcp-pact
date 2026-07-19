@@ -48,6 +48,20 @@ Paths use a small JSONPath subset: `$`, dot fields (`$.isError`), and array
 indexes (`$.content[0].text`). A matcher whose `path` does not resolve fails
 (and, on a used field, classifies as **BREAKING**).
 
+### Semantics (normative)
+
+- **`regex` is a substring match** (`find()`, not full-match). Anchor with `^`
+  and `$` when you need the whole value to match.
+- **A JSON `null` leaf counts as present.** `{ "path": "$.x", "present": true }`
+  passes when `x` exists with value `null`; it fails only when `x` is absent.
+  Use `{ "path": "$.x", "present": false }` to require absence.
+- **`equals` compares numbers by value.** `5` and `5.0` are equal, so a provider
+  switching integer↔float representation is not a false breaking change. All
+  other types compare structurally.
+- An **invalid matcher** (malformed `path`, uncompilable `regex`, or unknown
+  `type`) is a bad *pact*, not a broken contract: the verifier reports it and
+  exits **2**, distinct from exit 1.
+
 ## Example
 
 See the example in [`DESIGN.md`](DESIGN.md) §2.

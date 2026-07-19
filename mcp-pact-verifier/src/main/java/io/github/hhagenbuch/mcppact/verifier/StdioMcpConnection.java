@@ -3,6 +3,7 @@ package io.github.hhagenbuch.mcppact.verifier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.hhagenbuch.mcppact.core.Capabilities;
 import io.github.hhagenbuch.mcppact.core.model.ServerSnapshot;
 import io.github.hhagenbuch.mcppact.core.model.ServerTool;
 
@@ -15,7 +16,6 @@ import java.io.OutputStreamWriter;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -58,11 +58,7 @@ public final class StdioMcpConnection implements McpConnection {
         clientInfo.put("name", "mcp-pact-verifier");
         clientInfo.put("version", "0.1.0");
         JsonNode result = request("initialize", init);
-        JsonNode caps = result.path("capabilities");
-        if (caps.isObject()) {
-            Iterator<String> names = caps.fieldNames();
-            names.forEachRemaining(capabilities::add);
-        }
+        capabilities.addAll(Capabilities.flatten(result.path("capabilities")));
         notification("notifications/initialized");
     }
 
