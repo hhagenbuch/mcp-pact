@@ -1,6 +1,7 @@
-/target/
+target/
 .idea/
 *.iml
 .vscode/
 .DS_Store
 *.log
+dependency-reduced-pom.xml
