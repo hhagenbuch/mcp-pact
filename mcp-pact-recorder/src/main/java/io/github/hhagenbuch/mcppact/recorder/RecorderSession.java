@@ -36,7 +36,10 @@ public final class RecorderSession {
     private record Call(JsonNode arguments, JsonNode result) {}
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final Map<Integer, JsonNode> pending = new LinkedHashMap<>();
+    // Keyed on the id's textual form: JSON-RPC ids may be strings OR numbers, and
+    // asInt() on a string id returns 0, collapsing every string-id request onto one
+    // key and silently breaking correlation. Text is the safe common denominator.
+    private final Map<String, JsonNode> pending = new LinkedHashMap<>();
     private final Map<String, ServerTool> serverTools = new LinkedHashMap<>();
     private final Map<String, List<Call>> callsByTool = new LinkedHashMap<>();
     private final Set<String> capabilities = new LinkedHashSet<>();
@@ -44,7 +47,7 @@ public final class RecorderSession {
     /** A message the client sent toward the server. */
     public void observeClientMessage(JsonNode message) {
         if (message.has("id") && message.has("method")) {
-            pending.put(message.get("id").asInt(), message);
+            pending.put(message.get("id").asText(), message);
         }
     }
 
@@ -53,7 +56,7 @@ public final class RecorderSession {
         if (!message.has("id")) {
             return;
         }
-        JsonNode request = pending.remove(message.get("id").asInt());
+        JsonNode request = pending.remove(message.get("id").asText());
         if (request == null || !message.has("result")) {
             return;
         }
@@ -87,6 +90,10 @@ public final class RecorderSession {
                     tool,
                     advertised != null ? advertised.description() : null,
                     exercisedSchema(calls, advertised),
+                    // MVP: a tool call depends on the `tools` capability, so that's what we
+                    // record. The verifier already matches requiredCapabilities against the
+                    // server's full dotted capability set (`resources.subscribe`, ...); richer
+                    // per-tool capability inference at record time is future work.
                     capabilities.contains("tools") ? List.of("tools") : List.of(),
                     interactions(tool, calls)));
         }

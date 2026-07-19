@@ -94,10 +94,13 @@ public final class StdioMcpConnection implements McpConnection {
                 req.set("params", params);
             }
             send(req);
+            String expectedId = String.valueOf(id);
             String line;
             while ((line = stdout.readLine()) != null) {
                 JsonNode node = mapper.readTree(line);
-                if (node.has("id") && node.path("id").asInt() == id) {
+                // Match on the id's textual form: a server may echo our numeric id as a
+                // JSON string, and asInt() on a non-numeric string collapses to 0.
+                if (node.has("id") && node.path("id").asText().equals(expectedId)) {
                     if (node.has("error")) {
                         throw new IllegalStateException("MCP error for " + method + ": " + node.get("error"));
                     }

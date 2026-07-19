@@ -16,10 +16,12 @@ import java.util.List;
 
 /**
  * A transparent stdio proxy: {@code client ↔ recorder ↔ server}. It launches the
- * real server, forwards every line each way unchanged, and tees each parsed
- * JSON-RPC message into a {@link RecorderSession}. Passthrough is byte-faithful
- * (the client and server behave exactly as if directly connected); observation
- * is best-effort (a line that isn't JSON is forwarded but not recorded).
+ * real server, forwards every line each way, and tees each parsed JSON-RPC
+ * message into a {@link RecorderSession}. Passthrough is line-faithful — each
+ * newline-delimited message is forwarded intact (line reading normalizes CRLF,
+ * which is immaterial to JSON-RPC). The server's stderr is forwarded to the
+ * proxy's stderr so the client still sees server logs. Observation is
+ * best-effort: a line that isn't JSON is forwarded but not recorded.
  */
 public final class RecorderProxy {
 
@@ -45,7 +47,7 @@ public final class RecorderProxy {
         } catch (IOException e) {
             throw new UncheckedIOException("failed to launch MCP server: " + serverCommand, e);
         }
-        drainAsync(server.getErrorStream());
+        forwardStderrAsync(server.getErrorStream());
 
         // client → server: forward each request, observe it; EOF closes the server's stdin.
         Thread toServer = new Thread(() -> pump(clientIn, server.getOutputStream(),
@@ -57,6 +59,10 @@ public final class RecorderProxy {
         toServer.start();
         toClient.start();
         try {
+            // In CLI use the client drives shutdown by closing stdin (EOF → toServer
+            // ends → server stdin closed → server exits → toClient ends). A server that
+            // crashes while the client holds stdin open would leave toServer blocked on
+            // read; acceptable for the CLI, where the client owns the lifecycle.
             toServer.join();
             toClient.join();
             server.waitFor();
@@ -92,17 +98,19 @@ public final class RecorderProxy {
         }
     }
 
-    private void drainAsync(InputStream stream) {
-        Thread drain = new Thread(() -> {
+    /** Forwards the server's stderr to ours so server logs stay visible through the proxy. */
+    private void forwardStderrAsync(InputStream stream) {
+        Thread forward = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
-                while (reader.readLine() != null) {
-                    // discard server logs to keep the pipe from filling
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.err.println(line);
                 }
             } catch (IOException ignored) {
                 // stream closed on shutdown
             }
-        }, "recorder-stderr-drain");
-        drain.setDaemon(true);
-        drain.start();
+        }, "recorder-stderr-forward");
+        forward.setDaemon(true);
+        forward.start();
     }
 }
