@@ -9,7 +9,10 @@ inputs:
     description: 'Path to the .mcp-pact.json file in your repository.'
     required: true
   server-command:
-    description: 'Command that launches your MCP server over stdio (e.g. "npx -y @you/your-mcp-server").'
+    description: >
+      Command that launches your MCP server over stdio (e.g. "npx -y @you/your-mcp-server").
+      Note: this is word-split on spaces; if an argument must contain spaces, wrap the launch
+      in a small script and point server-command at that.
     required: true
   strict:
     description: 'Fail on WARN findings (e.g. tool-description drift) as well as BREAKING ones.'

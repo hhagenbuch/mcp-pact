@@ -69,6 +69,21 @@ class RecorderSessionTest {
     }
 
     @Test
+    void correlatesStringJsonRpcIds() throws Exception {
+        // The JSON-RPC spec allows string ids; correlation must not assume numbers.
+        RecorderSession session = new RecorderSession();
+        session.observeClientMessage(json("{\"id\":\"call-abc\",\"method\":\"tools/call\",\"params\":{"
+                + "\"name\":\"echo\",\"arguments\":{\"text\":\"hi\"}}}"));
+        session.observeServerMessage(json("{\"id\":\"call-abc\",\"result\":{"
+                + "\"content\":[{\"type\":\"text\",\"text\":\"hi\"}],\"isError\":false}}"));
+
+        Pact pact = session.toPact("c", "p");
+        assertThat(pact.expectations()).hasSize(1);
+        assertThat(pact.expectations().get(0).tool()).isEqualTo("echo");
+        assertThat(pact.expectations().get(0).interactions()).hasSize(1);
+    }
+
+    @Test
     void infersTypesWhenServerSchemaUnavailable() throws Exception {
         // No tools/list observed → types inferred from the values the client sent.
         RecorderSession session = new RecorderSession();
