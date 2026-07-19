@@ -1,5 +1,8 @@
 # mcp-pact
 
+[![CI](https://github.com/hhagenbuch/mcp-pact/actions/workflows/ci.yml/badge.svg)](https://github.com/hhagenbuch/mcp-pact/actions)
+![Java 21](https://img.shields.io/badge/Java-21-blue)
+
 > When an MCP server renames a tool, tightens a parameter, or subtly changes
 > response shape, nothing fails at deploy time — the agents depending on it
 > just quietly get worse. `mcp-pact` brings consumer-driven contract testing
@@ -53,7 +56,7 @@ behavior even when every schema still holds.
 ## Roadmap
 
 - [ ] Phase 0 — design doc + pact schema (this)
-- [ ] Phase 1 — `mcp-pact-core`: model + matchers + schema-diff, taxonomy as table-driven tests
+- [x] Phase 1 — `mcp-pact-core`: model + matchers + schema-diff, taxonomy as table-driven tests
 - [ ] Phase 2 — `mcp-pact-verifier`: stdio client, diff + replay, report, exit codes
 - [ ] Phase 3 — `mcp-pact-recorder`: passthrough proxy with consumer-exercised schema capture
 - [ ] Phase 4 — GitHub Action + self-test badge + demo GIF

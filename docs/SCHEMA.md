@@ -18,6 +18,7 @@ explains it; the schema file is the source of truth.
 | Field                  | Type   | Req | Meaning |
 |------------------------|--------|-----|---------|
 | `tool`                 | string | ✓   | Tool name as used via `tools/call`. |
+| `description`          | string |     | The tool description observed at record time. A material change to it on the provider surfaces as **WARN** (schema-true, behavior-changing). |
 | `inputSchema`          | object | ✓   | **Consumer-exercised** subset of the tool's input JSON Schema — only the fields the consumer actually sends. |
 | `requiredCapabilities` | array  |     | MCP capabilities the consumer needs (e.g. `["tools"]`). |
 | `interactions`         | array  | ✓   | Concrete recorded calls and their expected response shape. |

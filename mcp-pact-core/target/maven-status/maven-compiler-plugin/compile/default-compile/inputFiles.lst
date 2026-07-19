@@ -1,0 +1,15 @@
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/Finding.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/JsonPaths.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/PactIO.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/Report.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/Severity.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/diff/ContractVerifier.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/diff/SchemaShape.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/matcher/MatcherEngine.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/model/Expectation.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/model/Interaction.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/model/Matcher.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/model/Pact.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/model/ResponseSpec.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/model/ServerSnapshot.java
+/Users/heywardhagenbuch/Workspaces/personal/mcp-pact/mcp-pact-core/src/main/java/io/github/hhagenbuch/mcppact/core/model/ServerTool.java
