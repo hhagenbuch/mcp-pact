@@ -1,0 +1,45 @@
+name: 'mcp-pact verify'
+description: 'Verify an MCP server against consumer-driven pacts, and fail the build on breaking changes.'
+branding:
+  icon: 'shield'
+  color: 'purple'
+
+inputs:
+  pact:
+    description: 'Path to the .mcp-pact.json file in your repository.'
+    required: true
+  server-command:
+    description: 'Command that launches your MCP server over stdio (e.g. "npx -y @you/your-mcp-server").'
+    required: true
+  strict:
+    description: 'Fail on WARN findings (e.g. tool-description drift) as well as BREAKING ones.'
+    required: false
+    default: 'false'
+  json:
+    description: 'Emit the report as JSON instead of human-readable text.'
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '21'
+        cache: maven
+
+    - name: Build the verifier
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: mvn -q -pl mcp-pact-verifier -am -DskipTests package
+
+    - name: Verify pact
+      shell: bash
+      run: |
+        JAR="${{ github.action_path }}/mcp-pact-verifier/target/mcp-pact-verifier.jar"
+        flags=()
+        [ "${{ inputs.strict }}" = "true" ] && flags+=("--strict")
+        [ "${{ inputs.json }}" = "true" ] && flags+=("--json")
+        java -jar "$JAR" verify "${{ inputs.pact }}" "${flags[@]}" -- ${{ inputs.server-command }}
