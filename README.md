@@ -1,6 +1,7 @@
 # mcp-pact
 
-[![CI](https://github.com/hhagenbuch/mcp-pact/actions/workflows/ci.yml/badge.svg)](https://github.com/hhagenbuch/mcp-pact/actions)
+[![CI](https://github.com/hhagenbuch/mcp-pact/actions/workflows/ci.yml/badge.svg)](https://github.com/hhagenbuch/mcp-pact/actions/workflows/ci.yml)
+[![Action self-test](https://github.com/hhagenbuch/mcp-pact/actions/workflows/self-test.yml/badge.svg)](https://github.com/hhagenbuch/mcp-pact/actions/workflows/self-test.yml)
 ![Java 21](https://img.shields.io/badge/Java-21-blue)
 
 > When an MCP server renames a tool, tightens a parameter, or subtly changes
@@ -10,9 +11,24 @@
 > servers verify against those pacts in CI. Breaking changes become a red
 > build, not a production mystery.
 
-**Status: Phase 0 — design.** This repo currently contains the design and the
-pact-file schema. See [`docs/DESIGN.md`](docs/DESIGN.md) and
-[`docs/SCHEMA.md`](docs/SCHEMA.md). Code lands in phases; roadmap below.
+**Status: MVP.** Record, verify, and a CI action all work today. Design and
+schema: [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/SCHEMA.md`](docs/SCHEMA.md).
+
+## Demo
+
+<!-- TODO: replace with a 60-second asciinema/GIF of a `verify` run catching a renamed tool. -->
+
+A provider renames `search_code` → `search`; the consumer's pact catches it and
+fails the build:
+
+```console
+$ mcp-pact verify support-agent.mcp-pact.json -- npx @you/your-mcp-server
+mcp-pact: support-agent → workspace-tools
+  ✗ BREAKING search_code (tool.missing): tool used by the pact is not advertised by the server (missing or renamed)
+  ── 1 breaking, 0 warn, 0 compat
+$ echo $?
+1
+```
 
 ## How it works
 
@@ -68,6 +84,30 @@ Exit code: `0` = contract holds, `1` = a BREAKING difference (or a WARN under
 > SDK is an interface-level change and a roadmap item — the diff/replay logic is
 > transport-agnostic.
 
+## In CI (providers): fail the build on breaking changes
+
+Add the action to your MCP server's repo — every PR is now checked against the
+consumer contracts it must honor:
+
+```yaml
+# .github/workflows/contracts.yml
+name: contracts
+on: [pull_request]
+jobs:
+  pacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hhagenbuch/mcp-pact@v1
+        with:
+          pact: contracts/support-agent.mcp-pact.json
+          server-command: npx -y @you/your-mcp-server
+          # strict: true   # also fail on WARN (e.g. description drift)
+```
+
+This repo dogfoods its own action against `examples/` on every push — see the
+**Action self-test** badge above.
+
 ## Breaking-change taxonomy
 
 | Class        | Examples |
@@ -100,7 +140,7 @@ behavior even when every schema still holds.
 - [x] Phase 1 — `mcp-pact-core`: model + matchers + schema-diff, taxonomy as table-driven tests
 - [x] Phase 2 — `mcp-pact-verifier`: stdio client, diff + replay, report, exit codes
 - [x] Phase 3 — `mcp-pact-recorder`: passthrough proxy with consumer-exercised schema capture
-- [ ] Phase 4 — GitHub Action + self-test badge + demo GIF
+- [x] Phase 4 — GitHub Action (`action.yml`) + self-test badge + examples
 - [ ] Later — HTTP/SSE transport; resources/prompts contracts; a pact broker
 
 ## Related

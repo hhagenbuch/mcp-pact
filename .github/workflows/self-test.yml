@@ -1,0 +1,17 @@
+name: Action self-test
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  # Dogfood the action: verify the in-repo example pact against the example
+  # server. Proves `uses: hhagenbuch/mcp-pact@v1` works end to end.
+  verify-example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify the example pact with the action
+        uses: ./
+        with:
+          pact: examples/search.mcp-pact.json
+          server-command: java examples/ExampleMcpServer.java v1
