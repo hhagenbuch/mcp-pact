@@ -27,6 +27,31 @@ pact-file schema. See [`docs/DESIGN.md`](docs/DESIGN.md) and
 
 "Pact, for MCP." If you know consumer-driven contracts, you already know this.
 
+## Verify (working today)
+
+Build the shaded jar and point it at any stdio MCP server:
+
+```bash
+mvn -q -pl mcp-pact-verifier -am package
+java -jar mcp-pact-verifier/target/mcp-pact-verifier.jar \
+  verify support-agent.mcp-pact.json [--strict] [--json] -- npx some-mcp-server
+```
+
+```
+mcp-pact: support-agent → example-tools
+  ✗ BREAKING search_code (tool.missing): tool used by the pact is not advertised by the server (missing or renamed)
+  ── 1 breaking, 0 warn, 0 compat
+```
+
+Exit code: `0` = contract holds, `1` = a BREAKING difference (or a WARN under
+`--strict`), `2` = usage error — drop it straight into CI.
+
+> **Transport note:** the MVP ships a self-contained stdio JSON-RPC client
+> (`StdioMcpConnection`) behind an `McpConnection` interface, so tests are
+> hermetic (a real subprocess, zero network). Swapping in the official MCP Java
+> SDK is an interface-level change and a roadmap item — the diff/replay logic is
+> transport-agnostic.
+
 ## Breaking-change taxonomy
 
 | Class        | Examples |
@@ -57,7 +82,7 @@ behavior even when every schema still holds.
 
 - [ ] Phase 0 — design doc + pact schema (this)
 - [x] Phase 1 — `mcp-pact-core`: model + matchers + schema-diff, taxonomy as table-driven tests
-- [ ] Phase 2 — `mcp-pact-verifier`: stdio client, diff + replay, report, exit codes
+- [x] Phase 2 — `mcp-pact-verifier`: stdio client, diff + replay, report, exit codes
 - [ ] Phase 3 — `mcp-pact-recorder`: passthrough proxy with consumer-exercised schema capture
 - [ ] Phase 4 — GitHub Action + self-test badge + demo GIF
 - [ ] Later — HTTP/SSE transport; resources/prompts contracts; a pact broker

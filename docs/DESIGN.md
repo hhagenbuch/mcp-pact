@@ -85,10 +85,18 @@ COMPAT is informational.
    `tools/list`, `tools/call`, accumulates expectations, and writes the pact on
    exit. Usage: `mcp-pact record --out support-agent.mcp-pact.json -- npx some-mcp-server`.
 3. **`mcp-pact-verifier`** — shaded-jar CLI: `mcp-pact verify pact.json --
-   <server command>`. Launches the server over stdio (official **MCP Java SDK**,
-   `io.modelcontextprotocol.sdk` — version + MCP spec revision pinned and noted
-   in the README), runs the `tools/list` diff + interaction replay, prints a
-   BREAKING/COMPAT/WARN report (human + `--json`), and sets the exit code.
+   <server command>`. Launches the server over stdio, runs the `tools/list` diff
+   + interaction replay, prints a BREAKING/COMPAT/WARN report (human + `--json`),
+   and sets the exit code.
+
+   **Transport decision (revised in Phase 2):** the MVP uses a self-contained
+   stdio JSON-RPC client (`StdioMcpConnection`) behind an `McpConnection`
+   interface rather than the official MCP Java SDK. Rationale: hermetic tests
+   (a real subprocess, no network or `npx` pulls at build time) and reuse of the
+   proven newline-delimited JSON-RPC approach. Because the diff/replay logic
+   depends only on `McpConnection`, adopting the official
+   `io.modelcontextprotocol.sdk` client later is an interface-level swap — kept
+   as a roadmap item, with the MCP spec revision it targets noted then.
 4. **`examples/`** — a tiny in-repo MCP server (Java) + consumer pact wired into
    CI as a self-test, plus a recorded pact against a public reference server
    (e.g. the filesystem server) as a realism proof.

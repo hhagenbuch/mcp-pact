@@ -1,0 +1,30 @@
+{
+  "pactVersion": "0.1",
+  "consumer": "support-agent",
+  "provider": "example-tools",
+  "expectations": [
+    {
+      "tool": "search_code",
+      "description": "Search the codebase.",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "query": { "type": "string" }, "limit": { "type": "number" } },
+        "required": ["query"]
+      },
+      "requiredCapabilities": ["tools"],
+      "interactions": [
+        {
+          "description": "search by symbol name",
+          "input": { "query": "CartService", "limit": 5 },
+          "response": {
+            "matchers": [
+              { "path": "$.content[0].type", "equals": "text" },
+              { "path": "$.content[0].text", "regex": "CartService" },
+              { "path": "$.isError", "equals": false }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
