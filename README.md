@@ -27,6 +27,22 @@ pact-file schema. See [`docs/DESIGN.md`](docs/DESIGN.md) and
 
 "Pact, for MCP." If you know consumer-driven contracts, you already know this.
 
+## Record (working today)
+
+Put the recorder between your MCP client and the real server; run your agent as
+usual, and a pact falls out of the traffic when the client disconnects:
+
+```bash
+mvn -q -pl mcp-pact-recorder -am package
+mcp-pact record --out support-agent.mcp-pact.json -- npx some-mcp-server
+```
+
+It transparently forwards stdio both ways and captures the **consumer-exercised**
+schema — only the fields your agent actually sent, typed from the server's
+advertised schema — so the contract encodes your real dependency surface, not
+the server's entire API. Response shape is captured with matchers (types, not
+brittle literals); tighten with a `regex` where you want a stronger guarantee.
+
 ## Verify (working today)
 
 Build the shaded jar and point it at any stdio MCP server:
@@ -83,7 +99,7 @@ behavior even when every schema still holds.
 - [ ] Phase 0 — design doc + pact schema (this)
 - [x] Phase 1 — `mcp-pact-core`: model + matchers + schema-diff, taxonomy as table-driven tests
 - [x] Phase 2 — `mcp-pact-verifier`: stdio client, diff + replay, report, exit codes
-- [ ] Phase 3 — `mcp-pact-recorder`: passthrough proxy with consumer-exercised schema capture
+- [x] Phase 3 — `mcp-pact-recorder`: passthrough proxy with consumer-exercised schema capture
 - [ ] Phase 4 — GitHub Action + self-test badge + demo GIF
 - [ ] Later — HTTP/SSE transport; resources/prompts contracts; a pact broker
 

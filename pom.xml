@@ -14,6 +14,7 @@
     <modules>
         <module>mcp-pact-core</module>
         <module>mcp-pact-verifier</module>
+        <module>mcp-pact-recorder</module>
     </modules>
 
     <properties>
