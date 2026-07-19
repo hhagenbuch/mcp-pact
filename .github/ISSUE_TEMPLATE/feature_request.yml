@@ -1,0 +1,16 @@
+name: Feature request
+description: Suggest an improvement to mcp-pact
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that mcp-pact makes hard or impossible?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like it to do? Rough ideas are fine.

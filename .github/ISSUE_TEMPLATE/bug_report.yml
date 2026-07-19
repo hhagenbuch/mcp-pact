@@ -1,0 +1,35 @@
+name: Bug report
+description: Something in mcp-pact behaves incorrectly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: A minimal repro — the pact file plus the MCP server command — is the fastest path to a fix.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did mcp-pact do, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: The command you ran, and the pact and/or MCP server command if you can share them.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: mcp-pact version
+      placeholder: "v1, or a commit SHA"
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Verifier output
+      description: The output (add --json if you can) and the exit code.
+      render: shell
