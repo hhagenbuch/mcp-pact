@@ -40,7 +40,7 @@ public final class MatcherEngine {
             }
             case EQUALS -> at.isEmpty()
                     ? fail(tool, matcher, "path missing")
-                    : (at.get().equals(matcher.equalsValue())
+                    : (jsonEquals(at.get(), matcher.equalsValue())
                     ? Optional.empty()
                     : fail(tool, matcher, "expected " + matcher.equalsValue() + " but was " + at.get()));
             case REGEX -> {
@@ -66,6 +66,18 @@ public final class MatcherEngine {
     private static Optional<Finding> fail(String tool, Matcher matcher, String reason) {
         return Optional.of(Finding.breaking(tool, "response.matcher",
                 matcher.path() + ": " + reason));
+    }
+
+    /**
+     * Equality that compares numbers by value, so a server switching an integer
+     * to its float representation ({@code 4} → {@code 4.0}) is not a false
+     * BREAKING. All other node types fall back to structural equality.
+     */
+    private static boolean jsonEquals(JsonNode a, JsonNode b) {
+        if (a.isNumber() && b.isNumber()) {
+            return a.decimalValue().compareTo(b.decimalValue()) == 0;
+        }
+        return a.equals(b);
     }
 
     private static boolean typeMatches(String type, JsonNode node) {

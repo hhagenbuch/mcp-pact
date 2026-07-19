@@ -7,6 +7,7 @@ import io.github.hhagenbuch.mcppact.core.model.Expectation;
 import io.github.hhagenbuch.mcppact.core.model.Pact;
 import io.github.hhagenbuch.mcppact.core.model.ServerSnapshot;
 import io.github.hhagenbuch.mcppact.core.model.ServerTool;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -125,7 +126,50 @@ class ContractVerifierTest {
                                 Set.of("tools")),
                         // query removed (BREAKING), limit now required but consumer sends it (ok),
                         // verbose new optional (COMPAT)
-                        Set.of("BREAKING:param.removed", "COMPAT:param.newOptional"))
+                        Set.of("BREAKING:param.removed", "COMPAT:param.newOptional")),
+
+                Arguments.of("WARN param.schemaDetails — used param widened to a nullable type array",
+                        pact(baseline),
+                        snapshot(List.of(new ServerTool("search_code", "Search the codebase.",
+                                json("{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\"},"
+                                        + "\"limit\":{\"type\":[\"number\",\"null\"]}},\"required\":[\"query\"]}"))),
+                                Set.of("tools")),
+                        Set.of("WARN:param.schemaDetails")),
+
+                Arguments.of("WARN param.schemaDetails — enum narrowed on a used param (shallow types agree)",
+                        pact(baseline),
+                        snapshot(List.of(new ServerTool("search_code", "Search the codebase.",
+                                json("{\"type\":\"object\",\"properties\":{"
+                                        + "\"query\":{\"type\":\"string\",\"enum\":[\"a\",\"b\"]},"
+                                        + "\"limit\":{\"type\":\"number\"}},\"required\":[\"query\"]}"))),
+                                Set.of("tools")),
+                        Set.of("WARN:param.schemaDetails")),
+
+                Arguments.of("WARN tool.descriptionRemoved — description deleted entirely",
+                        pact(baseline),
+                        snapshot(List.of(new ServerTool("search_code", null, json(CONSUMER_SCHEMA))),
+                                Set.of("tools")),
+                        Set.of("WARN:tool.descriptionRemoved")),
+
+                Arguments.of("clean — immaterial description edit (punctuation only)",
+                        pact(baseline),
+                        snapshot(List.of(new ServerTool("search_code", "Search the codebase", json(CONSUMER_SCHEMA))),
+                                Set.of("tools")),
+                        Set.of()),
+
+                Arguments.of("clean — dotted capability is declared",
+                        pact(expectation("search_code", "Search the codebase.", CONSUMER_SCHEMA,
+                                List.of("resources.subscribe"))),
+                        snapshot(List.of(new ServerTool("search_code", "Search the codebase.", json(CONSUMER_SCHEMA))),
+                                Set.of("tools", "resources", "resources.subscribe")),
+                        Set.of()),
+
+                Arguments.of("BREAKING capability.withdrawn — required dotted capability gone",
+                        pact(expectation("search_code", "Search the codebase.", CONSUMER_SCHEMA,
+                                List.of("resources.subscribe"))),
+                        snapshot(List.of(new ServerTool("search_code", "Search the codebase.", json(CONSUMER_SCHEMA))),
+                                Set.of("tools")),
+                        Set.of("BREAKING:capability.withdrawn"))
         );
     }
 
@@ -133,5 +177,38 @@ class ContractVerifierTest {
     @MethodSource("taxonomy")
     void classifiesDrift(String label, Pact pact, ServerSnapshot snapshot, Set<String> expected) {
         assertThat(ruleKeys(ContractVerifier.diff(pact, snapshot))).isEqualTo(expected);
+    }
+
+    @Test
+    void reportsEachBreakingParamRemovalSeparately() {
+        // Server drops BOTH params the consumer sends — multiplicity must survive.
+        ServerSnapshot snapshot = snapshot(List.of(new ServerTool("search_code", "Search the codebase.",
+                json("{\"type\":\"object\",\"properties\":{}}"))), Set.of("tools"));
+
+        List<String> keys = ContractVerifier.diff(
+                        pact(expectation("search_code", "Search the codebase.", CONSUMER_SCHEMA, List.of("tools"))),
+                        snapshot).stream()
+                .map(f -> f.severity() + ":" + f.rule())
+                .sorted()
+                .toList();
+
+        assertThat(keys).containsExactly("BREAKING:param.removed", "BREAKING:param.removed");
+    }
+
+    @Test
+    void collapsesManyUncoveredToolsIntoOneFinding() {
+        ServerSnapshot snapshot = snapshot(List.of(
+                new ServerTool("search_code", "Search the codebase.", json(CONSUMER_SCHEMA)),
+                new ServerTool("write_file", "w", json("{\"type\":\"object\"}")),
+                new ServerTool("read_file", "r", json("{\"type\":\"object\"}")),
+                new ServerTool("list_dir", "l", json("{\"type\":\"object\"}"))), Set.of("tools"));
+
+        long toolNew = ContractVerifier.diff(
+                        pact(expectation("search_code", "Search the codebase.", CONSUMER_SCHEMA, List.of("tools"))),
+                        snapshot).stream()
+                .filter(f -> f.rule().equals("tool.new"))
+                .count();
+
+        assertThat(toolNew).isEqualTo(1); // 3 uncovered tools → a single collapsed finding
     }
 }

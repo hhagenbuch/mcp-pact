@@ -61,4 +61,20 @@ class CliTest {
         assertThat(Cli.run(new String[]{"verify", "some.json"})).isEqualTo(2); // no `-- server`
         assertThat(Cli.run(new String[]{"bogus"})).isEqualTo(2);
     }
+
+    @Test
+    void invalidPactExitsTwoNotOne() {
+        // A malformed matcher regex is an invalid pact (exit 2), NOT a broken contract (exit 1).
+        String badPact = resource("bad-regex.mcp-pact.json").toString();
+        String[] args = {"verify", badPact, "--", javaBin(),
+                resource("server/ExampleMcpServer.java").toString(), "v1"};
+        assertThat(Cli.run(args)).isEqualTo(2);
+    }
+
+    @Test
+    void missingPactFileExitsTwo() {
+        String[] args = {"verify", "does-not-exist.mcp-pact.json", "--", javaBin(),
+                resource("server/ExampleMcpServer.java").toString(), "v1"};
+        assertThat(Cli.run(args)).isEqualTo(2);
+    }
 }

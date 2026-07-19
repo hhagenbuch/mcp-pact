@@ -2,31 +2,28 @@ package io.github.hhagenbuch.mcppact.core.diff;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * The subset of a JSON Schema object that the diff engine reasons about: the
- * declared properties (name → declared {@code type}, possibly null) and the set
- * of required property names. Deliberately shallow — MVP compares top-level
- * object properties only; nested schemas are a roadmap item.
+ * The part of a JSON Schema object the diff reasons about: each property's full
+ * schema subtree and the set of required property names. Keeping the whole
+ * subtree (not just a type string) lets the diff detect changes it does not
+ * model precisely — nullable type arrays, enums, patterns, nested objects — and
+ * flag them rather than silently blessing them.
  */
-public record SchemaShape(Map<String, String> propertyTypes, Set<String> required) {
+public record SchemaShape(Map<String, JsonNode> properties, Set<String> required) {
 
     public static SchemaShape of(JsonNode schema) {
-        Map<String, String> types = new LinkedHashMap<>();
+        Map<String, JsonNode> properties = new LinkedHashMap<>();
         Set<String> required = new LinkedHashSet<>();
         if (schema != null && schema.isObject()) {
-            JsonNode properties = schema.get("properties");
-            if (properties != null && properties.isObject()) {
-                Iterator<Map.Entry<String, JsonNode>> it = properties.fields();
-                while (it.hasNext()) {
-                    Map.Entry<String, JsonNode> field = it.next();
-                    JsonNode type = field.getValue().get("type");
-                    types.put(field.getKey(), type != null && type.isTextual() ? type.asText() : null);
+            JsonNode props = schema.get("properties");
+            if (props != null && props.isObject()) {
+                for (Map.Entry<String, JsonNode> field : props.properties()) {
+                    properties.put(field.getKey(), field.getValue());
                 }
             }
             JsonNode req = schema.get("required");
@@ -34,14 +31,24 @@ public record SchemaShape(Map<String, String> propertyTypes, Set<String> require
                 req.forEach(n -> required.add(n.asText()));
             }
         }
-        return new SchemaShape(types, required);
+        return new SchemaShape(properties, required);
     }
 
     public boolean has(String property) {
-        return propertyTypes.containsKey(property);
+        return properties.containsKey(property);
     }
 
-    public String type(String property) {
-        return propertyTypes.get(property);
+    public JsonNode schema(String property) {
+        return properties.get(property);
+    }
+
+    /** The declared {@code type} if it is a plain string, else null (absent, or a type array). */
+    public String textualType(String property) {
+        JsonNode s = properties.get(property);
+        if (s == null) {
+            return null;
+        }
+        JsonNode type = s.get("type");
+        return type != null && type.isTextual() ? type.asText() : null;
     }
 }

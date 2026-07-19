@@ -28,6 +28,11 @@ public final class JsonPaths {
         record Index(int index) implements Step {}
     }
 
+    /** Validates path syntax without needing a document; throws on a malformed path. */
+    public static void validate(String path) {
+        parse(path);
+    }
+
     /** Returns the node at {@code path}, or empty if any step is missing. */
     public static Optional<JsonNode> resolve(JsonNode root, String path) {
         List<Step> steps = parse(path);

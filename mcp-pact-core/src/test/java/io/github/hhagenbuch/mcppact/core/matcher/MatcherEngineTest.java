@@ -98,4 +98,16 @@ class MatcherEngineTest {
         assertThat(eval(new Matcher("$.isError", null, null, null, false))).singleElement()
                 .extracting(Finding::severity).isEqualTo(Severity.BREAKING);
     }
+
+    @Test
+    void equalsComparesNumbersByValueNotRepresentation() throws Exception {
+        JsonNode response = mapper.readTree("{\"count\": 5}");
+        // 5 vs 5.0 must NOT be a false BREAKING (int → float representation change)
+        Matcher sameValue = new Matcher("$.count", mapper.readTree("5.0"), null, null, null);
+        assertThat(MatcherEngine.evaluate("t", List.of(sameValue), response)).isEmpty();
+        // a genuine value difference still fails
+        Matcher different = new Matcher("$.count", mapper.readTree("6"), null, null, null);
+        assertThat(MatcherEngine.evaluate("t", List.of(different), response)).singleElement()
+                .extracting(Finding::severity).isEqualTo(Severity.BREAKING);
+    }
 }
