@@ -16,7 +16,16 @@ schema: [`docs/DESIGN.md`](docs/DESIGN.md), [`docs/SCHEMA.md`](docs/SCHEMA.md).
 
 ## Demo
 
-<!-- TODO: replace with a 60-second asciinema/GIF of a `verify` run catching a renamed tool. -->
+![mcp-pact verifying a contract, catching a renamed tool, and warning on description drift](docs/verify-demo.gif)
+
+Four commands: an unchanged server passes, a renamed tool fails the build, and a
+description change — schema-identical, but it steers the model — is a WARN that
+stays non-fatal until you ask for `--strict`.
+
+The recording is scripted, not hand-captured: [`demo/verify.tape`](demo/verify.tape)
+drives it with [vhs](https://github.com/charmbracelet/vhs) against the in-repo
+example server, so `vhs demo/verify.tape` reproduces it from a clean clone. No
+network, no API key.
 
 A provider renames `search_code` → `search`; the consumer's pact catches it and
 fails the build:
