@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Thin launcher so the documented commands are runnable as written:
+#
+#   ./bin/mcp-pact verify <pact.json> [--strict] -- <server command>
+#   ./bin/mcp-pact record --out <pact.json>      -- <server command>
+#
+# It dispatches to the shaded jar for the relevant module. Build them first with:
+#   mvn -q -DskipTests package
+set -euo pipefail
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+usage() {
+  echo "usage:" >&2
+  echo "  ./bin/mcp-pact verify <pact.json> [--strict] -- <server command>" >&2
+  echo "  ./bin/mcp-pact record --out <pact.json> -- <server command>" >&2
+  exit 2
+}
+
+[ $# -ge 1 ] || usage
+
+case "$1" in
+  verify) jar="$here/mcp-pact-verifier/target/mcp-pact-verifier.jar" ;;
+  record) jar="$here/mcp-pact-recorder/target/mcp-pact-recorder.jar" ;;
+  -h|--help|help) usage ;;
+  *) echo "error: unknown subcommand '$1' (expected 'verify' or 'record')" >&2; usage ;;
+esac
+
+if [ ! -f "$jar" ]; then
+  echo "error: $jar not found — build it first:" >&2
+  echo "       mvn -q -DskipTests package" >&2
+  exit 2
+fi
+
+# Pass every argument through, including the subcommand (each CLI expects it as args[0]).
+exec java -jar "$jar" "$@"

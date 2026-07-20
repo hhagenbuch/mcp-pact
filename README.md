@@ -22,7 +22,8 @@ A provider renames `search_code` → `search`; the consumer's pact catches it an
 fails the build:
 
 ```console
-$ mcp-pact verify support-agent.mcp-pact.json -- npx @you/your-mcp-server
+$ mvn -q -DskipTests package        # builds the shaded jars the launcher runs
+$ ./bin/mcp-pact verify support-agent.mcp-pact.json -- npx @you/your-mcp-server
 mcp-pact: support-agent → workspace-tools
   ✗ BREAKING search_code (tool.missing): tool used by the pact is not advertised by the server (missing or renamed)
   ── 1 breaking, 0 warn, 0 compat
@@ -68,7 +69,7 @@ usual, and a pact falls out of the traffic when the client disconnects:
 
 ```bash
 mvn -q -pl mcp-pact-recorder -am package
-mcp-pact record --out support-agent.mcp-pact.json -- npx some-mcp-server
+./bin/mcp-pact record --out support-agent.mcp-pact.json -- npx some-mcp-server
 ```
 
 It transparently forwards stdio both ways and captures the **consumer-exercised**
@@ -141,14 +142,14 @@ behavior even when every schema still holds.
 
 - **`mcp-pact-core`** — pact model, JSON (de)serialization, schema-diff engine,
   matcher engine. Zero MCP dependency; pure, exhaustively unit-tested logic.
-- **`mcp-pact-verifier`** — `mcp-pact verify pact.json -- <server command>`.
+- **`mcp-pact-verifier`** — `./bin/mcp-pact verify pact.json -- <server command>`.
   Launches the server over stdio, diffs + replays, prints the report, sets exit
   code.
-- **`mcp-pact-recorder`** — `mcp-pact record --out consumer.mcp-pact.json -- <server command>`.
+- **`mcp-pact-recorder`** — `./bin/mcp-pact record --out consumer.mcp-pact.json -- <server command>`.
   A transparent JSON-RPC passthrough proxy that captures the consumer-exercised
   subset of each schema.
 - **`examples/`** — an in-repo MCP server + consumer pact wired into CI as a
-  self-test, plus a recorded pact against a public reference server.
+  self-test.
 - **`action.yml`** — a GitHub Action so any provider adds "verify pacts on every
   PR" in ~5 lines.
 
