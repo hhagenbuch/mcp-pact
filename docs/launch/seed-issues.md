@@ -1,9 +1,9 @@
 # Seed issues (drafts for review — file after launch)
 
-Six issues from the real roadmap, written to be filed on
-`hhagenbuch/mcp-pact` so the repo looks alive on arrival. `good first issue` is
-applied only where it's honestly small and self-contained. **Nothing here has
-been filed** — file them yourself (or approve and I'll file).
+Six issues drawn from the real roadmap, written up so the work that's actually
+open is legible to a newcomer instead of living only in maintainers' heads.
+`good first issue` is applied only where it's honestly small and
+self-contained. **Nothing here has been filed** — file them yourself.
 
 Suggested labels to create first: `enhancement`, `good first issue`, `spec`,
 `transport`, `help wanted`.
