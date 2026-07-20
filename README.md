@@ -84,8 +84,7 @@ Build the shaded jar and point it at any stdio MCP server:
 
 ```bash
 mvn -q -pl mcp-pact-verifier -am package
-java -jar mcp-pact-verifier/target/mcp-pact-verifier.jar \
-  verify support-agent.mcp-pact.json [--strict] [--json] -- npx some-mcp-server
+./bin/mcp-pact verify support-agent.mcp-pact.json [--strict] [--json] -- npx some-mcp-server
 ```
 
 ```
