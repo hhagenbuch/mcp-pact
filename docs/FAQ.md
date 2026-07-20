@@ -1,7 +1,7 @@
-# Prepared FAQ (for the poster — answer in your own words)
+# FAQ
 
-Short, concrete, non-defensive answers to the predictable questions. Don't
-copy-paste these verbatim; they're the substance to draw on.
+Short, concrete answers to the questions mcp-pact gets asked most — why it isn't
+just a schema diff, how it relates to Pact itself, and what it does with secrets.
 
 ---
 
@@ -58,7 +58,7 @@ Stdio-only today — the verifier and recorder launch the server as a subprocess
 frame JSON-RPC over stdin/stdout. HTTP/SSE is the **top roadmap item** (there's an
 open issue) and it's well-bounded: the pact format is transport-agnostic, so it's a
 new connection type behind the same interface, not a redesign. If HTTP support is
-what would make you adopt it, say so on the issue — it moves the priority.
+what would make you adopt it, open an issue — it moves the priority.
 
 ### "Does recording capture secrets?"
 
