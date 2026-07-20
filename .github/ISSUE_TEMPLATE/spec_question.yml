@@ -1,0 +1,49 @@
+name: Spec / taxonomy question
+description: Discuss the drift taxonomy or contract semantics (BREAKING / COMPAT / WARN)
+labels: [spec]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        For questions about *how a change should be classified* — is renaming a
+        tool BREAKING? is a tightened parameter COMPAT or BREAKING? should a
+        description change be WARN? The taxonomy is defined by the table in
+        `ContractVerifierTest`; that suite is the spec. Proposals to change or
+        extend it belong here.
+  - type: textarea
+    id: change
+    attributes:
+      label: The change in question
+      description: The tool/schema change you're asking about (before → after).
+      render: json
+    validations:
+      required: true
+  - type: dropdown
+    id: current
+    attributes:
+      label: How does mcp-pact classify it today?
+      options:
+        - BREAKING
+        - COMPAT
+        - WARN
+        - It passes silently (I think it shouldn't)
+        - Not sure / not covered
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: How do you think it should be classified, and why?
+      description: >
+        The reasoning matters more than the verdict — what would a consumer
+        agent actually experience if this change shipped unnoticed?
+    validations:
+      required: true
+  - type: textarea
+    id: taxonomy
+    attributes:
+      label: Proposed taxonomy row (optional)
+      description: >
+        If you're proposing a new/changed rule, sketch the row you'd add to the
+        taxonomy table test (class, condition, message).
+      render: text

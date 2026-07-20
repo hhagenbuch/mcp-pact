@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/hhagenbuch/mcp-pact/actions/workflows/ci.yml/badge.svg)](https://github.com/hhagenbuch/mcp-pact/actions/workflows/ci.yml)
 [![Action self-test](https://github.com/hhagenbuch/mcp-pact/actions/workflows/self-test.yml/badge.svg)](https://github.com/hhagenbuch/mcp-pact/actions/workflows/self-test.yml)
-![Java 21](https://img.shields.io/badge/Java-21-blue)
+![Java 25](https://img.shields.io/badge/Java-25-blue)
 
 > When an MCP server renames a tool, tightens a parameter, or subtly changes
 > response shape, nothing fails at deploy time — the agents depending on it
@@ -28,6 +28,24 @@ mcp-pact: support-agent → workspace-tools
   ── 1 breaking, 0 warn, 0 compat
 $ echo $?
 1
+```
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph consumer["Consumer side · record"]
+      AG[MCP client / agent] --> RC[recorder proxy<br/>stdio passthrough]
+      RC --> SRV1[real MCP server]
+    end
+    RC --> P[(*.mcp-pact.json<br/>consumer-exercised schema)]
+    subgraph provider["Provider CI · verify"]
+      P --> VF[verifier<br/>diff tools/list · replay interactions]
+      VF --> SRV2[MCP server under test]
+      VF --> CLS[classify drift<br/>BREAKING / COMPAT / WARN]
+      CLS --> XC{exit 0 / 1}
+    end
+    XC --> GA[hhagenbuch/mcp-pact GitHub Action]
 ```
 
 ## How it works
