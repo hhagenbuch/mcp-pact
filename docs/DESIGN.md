@@ -157,7 +157,11 @@ dependency surface, so the verifier flags a breaking change only when it breaks
 
 ## 6. Non-goals (MVP)
 
-- HTTP/SSE transport (stdio only for MVP; HTTP is a roadmap item).
+- HTTP/SSE transport (stdio only for MVP; HTTP is a roadmap item). When we take this on,
+  the SSE stream-resumption behavior is a spec input to get right — see MCP
+  [#1939, "Define behavior when Last-Event-ID is unresumable"](https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1939)
+  (an unresumable `Last-Event-ID` is a distinct case the recorder/verifier must handle, not
+  a JSON-RPC message-id concern).
 - Contracts for MCP `resources` / `prompts` (tools only for now).
 - A pact broker / central registry (pacts live in repos for MVP).
 
