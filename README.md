@@ -127,6 +127,12 @@ jobs:
 This repo dogfoods its own action against `examples/` on every push — see the
 **Action self-test** badge above.
 
+## FAQ
+
+Why not just diff the schema? Why is a description change only a WARN? How does
+this relate to [Pact](https://pact.io) itself? Does recording capture secrets?
+See [`docs/FAQ.md`](docs/FAQ.md).
+
 ## Breaking-change taxonomy
 
 | Class        | Examples |

@@ -5,6 +5,9 @@ open is legible to a newcomer instead of living only in maintainers' heads.
 `good first issue` is applied only where it's honestly small and
 self-contained. **Nothing here has been filed** — file them yourself.
 
+This file is a staging area, not documentation: once these are filed as real
+issues, the tracker is the source of truth and this file gets deleted.
+
 Suggested labels to create first: `enhancement`, `good first issue`, `spec`,
 `transport`, `help wanted`.
 
