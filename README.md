@@ -30,6 +30,24 @@ $ echo $?
 1
 ```
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph consumer["Consumer side · record"]
+      AG[MCP client / agent] --> RC[recorder proxy<br/>stdio passthrough]
+      RC --> SRV1[real MCP server]
+    end
+    RC --> P[(*.mcp-pact.json<br/>consumer-exercised schema)]
+    subgraph provider["Provider CI · verify"]
+      P --> VF[verifier<br/>diff tools/list · replay interactions]
+      VF --> SRV2[MCP server under test]
+      VF --> CLS[classify drift<br/>BREAKING / COMPAT / WARN]
+      CLS --> XC{exit 0 / 1}
+    end
+    XC --> GA[hhagenbuch/mcp-pact GitHub Action]
+```
+
 ## How it works
 
 1. **Record** — run your MCP client through a transparent stdio proxy; it
