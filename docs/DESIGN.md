@@ -118,7 +118,7 @@ change — future-proofed now to avoid a later `pactVersion` bump.
 split is deliberate — "the contract is broken" must be distinguishable from "we
 couldn't check it". COMPAT is always informational.
 
-## 4. Components (one Maven multi-module repo, Java 21)
+## 4. Components (one Maven multi-module repo, Java 25)
 
 1. **`mcp-pact-core`** — pact model, JSON (de)serialization, schema-diff engine,
    matcher engine. **Zero MCP dependency**; pure logic, exhaustively unit
