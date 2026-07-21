@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 /**
  * <pre>
- * mcp-pact verify &lt;pact.json&gt; [--strict] [--json] -- &lt;server command...&gt;
+ * mcp-pact verify &lt;pact.json&gt; [--strict] [--json | --format &lt;human|json|github&gt;] -- &lt;server command...&gt;
  * </pre>
  *
  * Exit code: {@code 0} = contract holds, {@code 1} = a BREAKING difference (or a
@@ -24,6 +24,9 @@ import java.util.regex.Pattern;
  * an invalid pact, or the provider failed to launch/respond). The 1-vs-2 split
  * is deliberate: "the contract is broken" must be distinguishable from "we could
  * not check it".
+ *
+ * <p>When {@code GITHUB_ACTIONS=true} is set in the environment, the default format
+ * switches to {@code github} automatically.</p>
  */
 public final class Cli {
 
@@ -44,12 +47,26 @@ public final class Cli {
         }
 
         boolean strict = false;
-        boolean asJson = false;
+        OutputFormat format = OutputFormat.HUMAN;
         String pactPath = null;
         for (int i = 1; i < dashDash; i++) {
             switch (args[i]) {
                 case "--strict" -> strict = true;
-                case "--json" -> asJson = true;
+                case "--json" -> format = OutputFormat.JSON;
+                case "--format" -> {
+                    i++;
+                    if (i >= dashDash) {
+                        return usage("--format requires an argument (human, json, github)");
+                    }
+                    format = switch (args[i]) {
+                        case "human" -> OutputFormat.HUMAN;
+                        case "json" -> OutputFormat.JSON;
+                        case "github" -> OutputFormat.GITHUB;
+                        default -> {
+                            return usage("unknown format: " + args[i] + " (expected human, json, or github)");
+                        }
+                    };
+                }
                 default -> {
                     if (args[i].startsWith("--")) {
                         return usage("unknown flag: " + args[i]);
@@ -60,6 +77,10 @@ public final class Cli {
                     pactPath = args[i];
                 }
             }
+        }
+        // Auto-detect GitHub Actions environment
+        if (format == OutputFormat.HUMAN && "true".equals(System.getenv("GITHUB_ACTIONS"))) {
+            format = OutputFormat.GITHUB;
         }
         if (pactPath == null) {
             return usage("missing <pact.json>");
@@ -83,9 +104,11 @@ public final class Cli {
             return 2;
         }
 
-        System.out.println(asJson
-                ? ReportFormatter.json(report, pact.consumer(), pact.provider())
-                : ReportFormatter.human(report, pact.consumer(), pact.provider()));
+        System.out.println(switch (format) {
+            case JSON -> ReportFormatter.json(report, pact.consumer(), pact.provider());
+            case GITHUB -> ReportFormatter.github(report, pact.consumer(), pact.provider());
+            case HUMAN -> ReportFormatter.human(report, pact.consumer(), pact.provider());
+        });
         return report.exitCode(strict);
     }
 
@@ -120,7 +143,7 @@ public final class Cli {
 
     private static int usage(String problem) {
         System.err.println("error: " + problem);
-        System.err.println("usage: mcp-pact verify <pact.json> [--strict] [--json] -- <server command...>");
+        System.err.println("usage: mcp-pact verify <pact.json> [--strict] [--json | --format <human|json|github>] -- <server command...>");
         return 2;
     }
 }
