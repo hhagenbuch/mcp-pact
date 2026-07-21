@@ -60,6 +60,33 @@ public final class ReportFormatter {
         }
     }
 
+    /**
+     * Renders findings as GitHub Actions annotation lines.
+     * BREAKING → {@code ::error}, WARN → {@code ::warning}, COMPAT → ignored.
+     * The human summary is still printed to stdout; annotations are additive.
+     */
+    public static String github(Report report, String consumer, String provider) {
+        StringBuilder out = new StringBuilder();
+        out.append("mcp-pact: ").append(consumer).append(" → ").append(provider).append('\n');
+        if (report.findings().isEmpty()) {
+            out.append("  ✓ no differences — contract holds\n");
+        } else {
+            for (Finding finding : report.findings()) {
+                switch (finding.severity()) {
+                    case BREAKING -> out.append("::error title=mcp-pact: ")
+                            .append(finding.tool()).append(" (").append(finding.rule()).append(")::")
+                            .append(finding.detail()).append('\n');
+                    case WARN -> out.append("::warning title=mcp-pact: ")
+                            .append(finding.tool()).append(" (").append(finding.rule()).append(")::")
+                            .append(finding.detail()).append('\n');
+                    default -> { /* COMPAT — informational, no annotation */ }
+                }
+            }
+        }
+        out.append("  ── ").append(report.summary());
+        return out.toString();
+    }
+
     private static String marker(Severity severity) {
         return switch (severity) {
             case BREAKING -> "✗";
