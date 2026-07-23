@@ -58,14 +58,14 @@ public final class Cli {
                     if (i >= dashDash) {
                         return usage("--format requires an argument (human, json, github)");
                     }
-                    format = switch (args[i]) {
-                        case "human" -> OutputFormat.HUMAN;
-                        case "json" -> OutputFormat.JSON;
-                        case "github" -> OutputFormat.GITHUB;
+                    switch (args[i]) {
+                        case "human" -> format = OutputFormat.HUMAN;
+                        case "json" -> format = OutputFormat.JSON;
+                        case "github" -> format = OutputFormat.GITHUB;
                         default -> {
                             return usage("unknown format: " + args[i] + " (expected human, json, or github)");
                         }
-                    };
+                    }
                 }
                 default -> {
                     if (args[i].startsWith("--")) {

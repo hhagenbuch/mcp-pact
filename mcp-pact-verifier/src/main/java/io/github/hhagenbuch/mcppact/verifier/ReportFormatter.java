@@ -68,7 +68,9 @@ public final class ReportFormatter {
     public static String github(Report report, String consumer, String provider) {
         StringBuilder out = new StringBuilder();
         out.append("mcp-pact: ").append(consumer).append(" → ").append(provider).append('\n');
-        if (report.findings().isEmpty()) {
+        boolean hasAnnotations = report.findings().stream()
+                .anyMatch(f -> f.severity() == Severity.BREAKING || f.severity() == Severity.WARN);
+        if (!hasAnnotations) {
             out.append("  ✓ no differences — contract holds\n");
         } else {
             for (Finding finding : report.findings()) {
