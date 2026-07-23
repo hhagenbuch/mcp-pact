@@ -101,40 +101,7 @@ public final class ContractVerifier {
                                          Expectation expectation, ServerTool server) {
         SchemaShape consumer = SchemaShape.of(expectation.inputSchema());
         SchemaShape provider = SchemaShape.of(server.inputSchema());
-
-        for (String param : consumer.properties().keySet()) {
-            if (!provider.has(param)) {
-                findings.add(Finding.breaking(tool, "param.removed",
-                        "input param '" + param + "' the consumer sends is no longer accepted"));
-                continue;
-            }
-            String consumerType = consumer.textualType(param);
-            String providerType = provider.textualType(param);
-            if (consumerType != null && providerType != null && !consumerType.equals(providerType)) {
-                findings.add(Finding.breaking(tool, "param.type",
-                        "input param '" + param + "' type changed from " + consumerType + " to " + providerType));
-            } else if (!consumer.schema(param).equals(provider.schema(param))) {
-                // Shallow types agree (or aren't plain strings) but the schema subtree
-                // changed in a way we don't model precisely — flag rather than silence.
-                findings.add(Finding.warn(tool, "param.schemaDetails",
-                        "input param '" + param + "' schema changed in a way mcp-pact does not model precisely "
-                                + "(nullable type, enum, pattern, length, or nested change) — review manually"));
-            }
-        }
-
-        for (String required : provider.required()) {
-            if (!consumer.has(required)) {
-                findings.add(Finding.breaking(tool, "param.newRequired",
-                        "server now requires input param '" + required + "' the consumer does not send"));
-            }
-        }
-
-        for (String param : provider.properties().keySet()) {
-            if (!consumer.has(param) && !provider.required().contains(param)) {
-                findings.add(Finding.compat(tool, "param.newOptional",
-                        "server added optional input param '" + param + "'"));
-            }
-        }
+        findings.addAll(SchemaShape.diff(tool, consumer, provider));
     }
 
     /**
